@@ -191,23 +191,6 @@
   .checks li { display: flex; gap: 12px; align-items: flex-start; }
   .checks li::before { content: ""; flex: none; width: 14px; height: 14px; margin-top: 7px; background: var(--orange); border: 2px solid var(--line); }
 
-  /* 技術 */
-  .tech { display: grid; gap: 0; border: 2px solid var(--line); background: var(--card); }
-  @media (min-width: 720px) { .tech { grid-template-columns: repeat(3, 1fr); } }
-  .tech div { padding: 18px 20px; border-bottom: 2px solid var(--line); }
-  @media (min-width: 720px) {
-    .tech div { border-right: 2px solid var(--line); }
-    .tech div:nth-child(3n) { border-right: 0; }
-    .tech div:nth-last-child(-n+3) { border-bottom: 0; }
-  }
-  @media (max-width: 719px) { .tech div:last-child { border-bottom: 0; } }
-  .tech dt { font-family: "Space Mono", monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: var(--blue); }
-  .tech dd { margin: 4px 0 0; font-weight: 700; }
-
-  .privacy { margin-top: 32px; padding: 20px; border: 2px solid var(--line); background: var(--blue); color: var(--on-blue); box-shadow: 5px 5px 0 var(--orange); }
-  .privacy h3 { margin: 0 0 6px; font-size: 18px; font-weight: 900; }
-  .privacy p { margin: 0; }
-
   footer { padding: 40px 0 56px; border-top: 2px solid var(--line); color: var(--muted); font-size: 14px; }
   footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
 
@@ -463,26 +446,6 @@
           <li>同一場多張票，左右滑動切換</li>
           <li>入場模式下螢幕不會自動變暗</li>
         </ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="block">
-    <div class="wrap">
-      <h2>用什麼做的</h2>
-      <p class="sub">全部使用免費方案就能上線。</p>
-      <dl class="tech">
-        <div><dt>FRONTEND</dt><dd>Next.js 15 · TypeScript</dd></div>
-        <div><dt>STYLE</dt><dd>Tailwind CSS · 孔版印刷設計系統</dd></div>
-        <div><dt>DATABASE</dt><dd>PostgreSQL · Drizzle ORM</dd></div>
-        <div><dt>FILES</dt><dd>Supabase Storage（私有）</dd></div>
-        <div><dt>EMAIL</dt><dd>Resend</dd></div>
-        <div><dt>HOSTING</dt><dd>Vercel · Vercel Cron</dd></div>
-      </dl>
-
-      <div class="privacy">
-        <h3>每個人的票夾各自獨立</h3>
-        <p>被邀請的人看不到彼此的票。票券檔案存在私有空間，只有本人登入後才打得開。</p>
       </div>
     </div>
   </section>
