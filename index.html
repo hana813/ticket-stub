@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>票根夾 Ticket Stub</title>
+<meta name="description" content="把演唱會票收在同一個地方，演出前三天寄信提醒你。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f7f2e7;
+    --card: #fcf9f2;
+    --ink: #2b2b2b;
+    --muted: #5c5750;
+    --line: #2b2b2b;
+    --orange: #ff5c39;
+    --on-orange: #2b2b2b;
+    --blue: #3255a4;
+    --on-blue: #f7f2e7;
+    --grain: 0.09;
+    --dot: 0.16;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1c1a17;
+      --card: #26231f;
+      --ink: #f1ebdd;
+      --muted: #b8b0a2;
+      --line: #f1ebdd;
+      --on-orange: #1c1a17;
+      --blue: #7d9be0;
+      --on-blue: #1c1a17;
+      --grain: 0.06;
+      --dot: 0.12;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1c1a17;
+    --card: #26231f;
+    --ink: #f1ebdd;
+    --muted: #b8b0a2;
+    --line: #f1ebdd;
+    --on-orange: #1c1a17;
+    --blue: #7d9be0;
+    --on-blue: #1c1a17;
+    --grain: 0.06;
+    --dot: 0.12;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  /* 紙張顆粒 */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    opacity: var(--grain);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .mono { font-family: "Space Mono", ui-monospace, Menlo, monospace; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  @media (min-width: 720px) { .wrap { padding: 0 32px; } }
+
+  /* 疊印：兩色重疊處相乘 */
+  .overprint { mix-blend-mode: multiply; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .overprint { mix-blend-mode: screen; } }
+  :root[data-theme="dark"] .overprint { mix-blend-mode: screen; }
+
+  /* 網點 */
+  .halftone {
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--blue) calc(var(--dot) * 600%), transparent) 1.2px, transparent 1.6px);
+    background-size: 8px 8px;
+  }
+
+  /* ── 頁首 ── */
+  header.top { padding: 20px 0; }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 900; font-size: 20px; letter-spacing: 0.12em; }
+  .theme-btn {
+    font: inherit; font-size: 14px; font-weight: 700;
+    background: var(--card); color: var(--ink);
+    border: 2px solid var(--line); padding: 6px 12px; min-height: 40px; cursor: pointer;
+    box-shadow: 3px 3px 0 var(--blue);
+  }
+  .theme-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--blue); }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+
+  /* ── 主視覺 ── */
+  .hero { padding: 32px 0 64px; }
+  .hero .wrap { display: grid; gap: 48px; align-items: center; }
+  @media (min-width: 880px) { .hero .wrap { grid-template-columns: 1.1fr 1fr; } }
+  .eyebrow { font-family: "Space Mono", monospace; font-weight: 700; font-size: 13px; letter-spacing: 0.2em; color: var(--blue); margin: 0 0 12px; }
+  h1 { font-size: clamp(40px, 9vw, 72px); line-height: 1.1; font-weight: 900; margin: 0 0 20px; letter-spacing: 0.04em; }
+  h1 .mark { position: relative; display: inline-block; }
+  h1 .mark::after {
+    content: ""; position: absolute; left: -4px; right: -4px; bottom: 0.08em; height: 0.36em;
+    background: var(--orange); z-index: -1; transform: rotate(-1.5deg);
+  }
+  .lead { font-size: 18px; color: var(--muted); max-width: 30em; margin: 0 0 28px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; list-style: none; }
+  .chips li { border: 2px solid var(--line); padding: 4px 12px; font-size: 14px; font-weight: 700; background: var(--card); }
+
+  /* 示意票券 */
+  .stage { position: relative; padding: 12px 20px 28px 4px; }
+  .ticket {
+    position: relative;
+    background: var(--card);
+    border: 2px solid var(--line);
+    box-shadow: 6px 6px 0 var(--blue);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    max-width: 440px;
+    margin-left: auto;
+  }
+  .ticket + .ticket { margin-top: -36px; margin-right: 28px; transform: rotate(-3deg); box-shadow: 6px 6px 0 var(--orange); }
+  .ticket .main { padding: 18px 20px; border-right: 2px dashed var(--line); min-width: 0; }
+  .ticket .stub { padding: 18px 16px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; gap: 8px; width: 104px; }
+  .ticket .poster { height: 84px; margin: -18px -20px 14px; border-bottom: 2px solid var(--line); background: var(--orange); position: relative; overflow: hidden; }
+  .ticket .poster.blue { background: var(--blue); }
+  .ticket .poster span { position: absolute; border-radius: 50%; }
+  .ticket h3 { margin: 0; font-size: 19px; font-weight: 900; line-height: 1.35; }
+  .ticket .meta { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+  .ticket .count { font-family: "Space Mono", monospace; font-weight: 700; font-size: 36px; line-height: 1; }
+  .ticket .count small { display: block; font-size: 11px; letter-spacing: 0.1em; font-weight: 700; margin-top: 4px; color: var(--muted); text-align: center; }
+  .ticket .seat { font-family: "Space Mono", monospace; font-size: 12px; font-weight: 700; border: 2px solid var(--line); padding: 2px 6px; white-space: nowrap; }
+  .notch { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: var(--paper); border: 2px solid var(--line); right: 94px; }
+  .notch.t { top: -11px; clip-path: inset(50% 0 0 0); }
+  .notch.b { bottom: -11px; clip-path: inset(0 0 50% 0); }
+
+  /* ── 區塊 ── */
+  section.block { padding: 56px 0; border-top: 2px solid var(--line); }
+  h2 { font-size: clamp(26px, 5vw, 36px); font-weight: 900; margin: 0 0 8px; letter-spacing: 0.04em; }
+  .sub { color: var(--muted); margin: 0 0 32px; }
+
+  .features { display: grid; gap: 20px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .features { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 960px) { .features { grid-template-columns: repeat(3, 1fr); } }
+  .feature { background: var(--card); border: 2px solid var(--line); padding: 20px; box-shadow: 4px 4px 0 var(--blue); }
+  .feature:nth-child(3n+2) { box-shadow: 4px 4px 0 var(--orange); }
+  .feature .num { font-family: "Space Mono", monospace; font-weight: 700; font-size: 13px; color: var(--blue); letter-spacing: 0.1em; }
+  .feature h3 { margin: 4px 0 6px; font-size: 19px; font-weight: 900; }
+  .feature p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* 流程 */
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; counter-reset: s; }
+  @media (min-width: 800px) { .steps { grid-template-columns: repeat(4, 1fr); } }
+  .steps li { counter-increment: s; padding: 20px 20px 24px 0; border-top: 2px solid var(--line); }
+  @media (min-width: 800px) { .steps li { padding-right: 24px; } }
+  .steps li::before {
+    content: counter(s, decimal-leading-zero);
+    display: inline-block; font-family: "Space Mono", monospace; font-weight: 700; font-size: 14px;
+    background: var(--orange); color: var(--on-orange); padding: 2px 8px; margin-bottom: 10px;
+  }
+  .steps h3 { margin: 0 0 4px; font-size: 18px; font-weight: 900; }
+  .steps p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* 入場模式示意 */
+  .entry { display: grid; gap: 40px; align-items: center; }
+  @media (min-width: 800px) { .entry { grid-template-columns: 1fr 1fr; } }
+  .phone {
+    width: 240px; max-width: 100%; margin: 0 auto; aspect-ratio: 9 / 18;
+    background: #111; border: 2px solid var(--line); border-radius: 28px; padding: 14px;
+    box-shadow: 8px 8px 0 var(--orange); display: flex; flex-direction: column; gap: 10px;
+  }
+  .phone .bar { display: flex; justify-content: space-between; color: #f1ebdd; font-family: "Space Mono", monospace; font-size: 11px; opacity: 0.75; }
+  .phone .screen { flex: 1; background: #fff; border-radius: 6px; display: grid; place-items: center; position: relative; }
+  .qr { width: 62%; aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; }
+  .qr i { background: #111; }
+  .qr i.o { background: transparent; }
+  .phone .dots { display: flex; justify-content: center; gap: 6px; }
+  .phone .dots b { width: 7px; height: 7px; border-radius: 50%; background: #f1ebdd; opacity: 0.4; }
+  .phone .dots b:first-child { opacity: 1; }
+  .phone .cap { color: #f1ebdd; text-align: center; font-size: 12px; font-weight: 700; }
+  .checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .checks li { display: flex; gap: 12px; align-items: flex-start; }
+  .checks li::before { content: ""; flex: none; width: 14px; height: 14px; margin-top: 7px; background: var(--orange); border: 2px solid var(--line); }
+
+  /* 技術 */
+  .tech { display: grid; gap: 0; border: 2px solid var(--line); background: var(--card); }
+  @media (min-width: 720px) { .tech { grid-template-columns: repeat(3, 1fr); } }
+  .tech div { padding: 18px 20px; border-bottom: 2px solid var(--line); }
+  @media (min-width: 720px) {
+    .tech div { border-right: 2px solid var(--line); }
+    .tech div:nth-child(3n) { border-right: 0; }
+    .tech div:nth-last-child(-n+3) { border-bottom: 0; }
+  }
+  @media (max-width: 719px) { .tech div:last-child { border-bottom: 0; } }
+  .tech dt { font-family: "Space Mono", monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: var(--blue); }
+  .tech dd { margin: 4px 0 0; font-weight: 700; }
+
+  .privacy { margin-top: 32px; padding: 20px; border: 2px solid var(--line); background: var(--blue); color: var(--on-blue); box-shadow: 5px 5px 0 var(--orange); }
+  .privacy h3 { margin: 0 0 6px; font-size: 18px; font-weight: 900; }
+  .privacy p { margin: 0; }
+
+  footer { padding: 40px 0 56px; border-top: 2px solid var(--line); color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+
+  /* ── 試玩 ── */
+  .cta {
+    display: inline-block; margin-top: 28px; padding: 12px 24px; min-height: 48px;
+    background: var(--orange); color: var(--on-orange); border: 2px solid var(--line);
+    font-weight: 900; font-size: 17px; text-decoration: none; box-shadow: 4px 4px 0 var(--blue);
+  }
+  .cta:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--blue); }
+  .demo { border: 2px solid var(--line); background: var(--card); box-shadow: 6px 6px 0 var(--orange); }
+  .demo-tabs { display: flex; border-bottom: 2px solid var(--line); }
+  .demo-tabs button {
+    flex: 1; font: inherit; font-weight: 900; font-size: 15px; padding: 10px 6px; min-height: 48px;
+    border: 0; border-right: 2px solid var(--line); background: transparent; color: var(--ink); cursor: pointer;
+  }
+  .demo-tabs button:last-child { border-right: 0; }
+  .demo-tabs button[aria-selected="true"] { background: var(--orange); color: var(--on-orange); }
+  .demo-body { padding: 20px 16px; min-height: 380px; }
+  @media (min-width: 720px) { .demo-body { padding: 24px; } }
+  .demo-foot { border-top: 2px solid var(--line); padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); }
+
+  .dlist { display: grid; gap: 18px; }
+  @media (min-width: 760px) { .dlist { grid-template-columns: 1fr 1fr; } }
+  .dt { display: grid; grid-template-columns: 1fr auto; border: 2px solid var(--line); background: var(--paper); box-shadow: 4px 4px 0 var(--blue); }
+  .dt.past { box-shadow: none; opacity: 0.75; }
+  .dt .m { padding: 14px 16px; border-right: 2px dashed var(--line); min-width: 0; }
+  .dt h4 { margin: 0; font-size: 17px; font-weight: 900; line-height: 1.35; overflow-wrap: anywhere; }
+  .dt .a { margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--blue); }
+  .dt .i { margin: 6px 0 0; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+  .dt .tag { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; padding: 1px 8px; border: 2px solid var(--line); }
+  .dt .tag.hot { background: var(--blue); color: var(--on-blue); }
+  .dt .s { width: 88px; padding: 12px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; }
+  .dt .d { font-family: "Space Mono", monospace; font-weight: 700; font-size: 30px; line-height: 1; }
+  .dt .u { font-family: "Space Mono", monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--muted); }
+  .dt .w { font-weight: 900; font-size: 15px; }
+  .dt .acts { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .thumb { width: 100%; height: 72px; object-fit: cover; border: 2px solid var(--line); margin-bottom: 10px; display: block; }
+
+  .btn {
+    font: inherit; font-weight: 700; font-size: 14px; border: 2px solid var(--line);
+    background: var(--card); color: var(--ink); padding: 6px 14px; min-height: 40px; cursor: pointer;
+  }
+  .btn.primary { background: var(--orange); color: var(--on-orange); box-shadow: 3px 3px 0 var(--blue); }
+  .btn.primary:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--blue); }
+  .btn.ghost { background: transparent; }
+  .btn.link { border: 0; background: none; padding: 4px 0; min-height: 0; text-decoration: underline; text-underline-offset: 4px; color: var(--muted); font-size: 13px; }
+
+  .dform { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 560px) { .dform { grid-template-columns: 1fr 1fr; } .dform .full { grid-column: 1 / -1; } }
+  .dform label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .dform label b { color: var(--blue); margin-left: 2px; }
+  .dform input, .dform select {
+    width: 100%; font: inherit; font-size: 16px; padding: 10px 12px; min-height: 46px;
+    border: 2px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 0;
+  }
+  .dform input[type="file"] { padding: 8px; }
+  .dform .hint { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+  .dform .err { font-size: 13px; color: var(--orange); font-weight: 700; margin: 4px 0 0; filter: brightness(0.85); }
+  .dform .row { display: grid; grid-template-columns: 1fr 110px; gap: 10px; }
+  .empty { text-align: center; padding: 48px 12px; }
+  .empty p { margin: 0 0 16px; font-weight: 700; }
+
+  .tiles { display: grid; gap: 14px; grid-template-columns: repeat(3, 1fr); margin-bottom: 24px; }
+  .tile { border: 2px solid var(--line); background: var(--paper); padding: 14px 12px; }
+  .tile b { display: block; font-family: "Space Mono", monospace; font-size: clamp(24px, 6vw, 34px); line-height: 1.1; }
+  .tile span { font-size: 13px; color: var(--muted); font-weight: 700; }
+  .cur { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  .cur li { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; font-weight: 700; }
+  .cur .bar { height: 14px; border: 2px solid var(--line); background: var(--paper); }
+  .cur .bar i { display: block; height: 100%; background: var(--blue); }
+  .cur .v { font-family: "Space Mono", monospace; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 90;
+    background: var(--ink); color: var(--paper); padding: 10px 18px; font-weight: 700; font-size: 14px;
+    border: 2px solid var(--line); box-shadow: 4px 4px 0 var(--orange); max-width: calc(100vw - 32px);
+  }
+
+  .overlay { position: fixed; inset: 0; z-index: 100; background: #111; color: #f1ebdd; display: flex; flex-direction: column; padding: 16px; }
+  .overlay[hidden] { display: none; }
+  .ov-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .ov-top h3 { margin: 0; font-size: 17px; font-weight: 900; }
+  .ov-top p { margin: 2px 0 0; font-size: 13px; opacity: 0.75; }
+  .ov-stage { flex: 1; display: grid; place-items: center; padding: 16px 0; min-height: 0; }
+  .ov-stage img { max-width: 100%; max-height: 100%; object-fit: contain; background: #fff; }
+  .ov-qr { background: #fff; color: #111; padding: 20px; width: min(82vw, 340px); text-align: center; }
+  .ov-qr canvas { width: 100%; height: auto; image-rendering: pixelated; display: block; }
+  .ov-qr p { margin: 12px 0 0; font-weight: 900; font-family: "Space Mono", monospace; font-size: 15px; }
+  .ov-nav { display: flex; justify-content: center; align-items: center; gap: 16px; }
+  .ov-btn { font: inherit; font-weight: 700; background: transparent; color: #f1ebdd; border: 2px solid #f1ebdd; min-height: 44px; min-width: 44px; padding: 6px 14px; cursor: pointer; }
+  .ov-btn:disabled { opacity: 0.3; cursor: default; }
+  .ov-note { text-align: center; font-size: 12px; opacity: 0.6; margin: 10px 0 0; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ticket { transition: transform 0.25s ease; }
+    .stage:hover .ticket:first-child { transform: translate(-3px, -3px); }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <span class="brand">
+      <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+        <path class="overprint" d="M3 8h20v4a2.5 2.5 0 0 0 0 5v4H3v-4a2.5 2.5 0 0 0 0-5z" fill="var(--orange)"/>
+        <path class="overprint" opacity="0.9" d="M8 12h20v4a2.5 2.5 0 0 0 0 5v4H8v-4a2.5 2.5 0 0 0 0-5z" fill="var(--blue)"/>
+      </svg>
+      票根夾
+    </span>
+    <button class="theme-btn" type="button" id="themeBtn" aria-label="切換深色／淺色">深色</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">TICKET STUB · 2026</p>
+        <h1>每一張票，<br><span class="mark">都收好了。</span></h1>
+        <p class="lead">把演唱會票收在同一個地方，演出前三天寄信提醒你。入場時一點就全螢幕顯示票券，看完還能寫下回憶。</p>
+        <ul class="chips" aria-label="特色">
+          <li>邀請制</li>
+          <li>手機電腦都好用</li>
+          <li>演出前 3 天提醒</li>
+          <li>孔版印刷風格</li>
+        </ul>
+        <a class="cta" href="#try">立即試玩 →</a>
+      </div>
+
+      <div class="stage" aria-hidden="true">
+        <div class="ticket">
+          <div class="main">
+            <div class="poster halftone">
+              <span style="width:90px;height:90px;left:20px;top:-20px;background:var(--blue);mix-blend-mode:multiply;opacity:.85"></span>
+              <span style="width:60px;height:60px;right:30px;top:30px;background:var(--paper);opacity:.9"></span>
+            </div>
+            <h3>2026 巡迴演唱會 台北站</h3>
+            <p class="meta">台北小巨蛋 · <span class="mono">11/22 19:30</span></p>
+          </div>
+          <div class="stub">
+            <div class="count">03<small>DAYS</small></div>
+            <span class="seat">黃2A 12排</span>
+          </div>
+          <span class="notch t"></span><span class="notch b"></span>
+        </div>
+        <div class="ticket">
+          <div class="main">
+            <div class="poster blue halftone">
+              <span style="width:110px;height:110px;right:-20px;top:-30px;background:var(--orange);mix-blend-mode:multiply;opacity:.9"></span>
+            </div>
+            <h3>夏日音樂祭 Day 2</h3>
+            <p class="meta">高雄流行音樂中心 · <span class="mono">12/06 14:00</span></p>
+          </div>
+          <div class="stub">
+            <div class="count">17<small>DAYS</small></div>
+            <span class="seat">×2 張</span>
+          </div>
+          <span class="notch t"></span><span class="notch b"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>能做什麼</h2>
+      <p class="sub">從買到票那天，一路陪到散場之後。</p>
+      <div class="features">
+        <article class="feature">
+          <span class="num">01 · 收票</span>
+          <h3>一場一個地方</h3>
+          <p>填好演出、場館、座位，上傳票券截圖或 PDF。同一場可以放好幾張票，巡迴場次一鍵複製。</p>
+        </article>
+        <article class="feature">
+          <span class="num">02 · 提醒</span>
+          <h3>前三天寄信給你</h3>
+          <p>演出前 3 天早上 9 點左右寄 Email。改了日期會自動依新日期重新提醒。</p>
+        </article>
+        <article class="feature">
+          <span class="num">03 · 入場</span>
+          <h3>入場模式</h3>
+          <p>全螢幕顯示票券，可放大、左右切換多張票，螢幕不會自動變暗。</p>
+        </article>
+        <article class="feature">
+          <span class="num">04 · 行事曆</span>
+          <h3>月曆與清單</h3>
+          <p>一眼看到這個月要去哪裡；可訂閱到 Google 或 Apple 日曆，新增的演出自動同步。</p>
+        </article>
+        <article class="feature">
+          <span class="num">05 · 統計</span>
+          <h3>今年花了多少</h3>
+          <p>依月份統計票價花費，海外場次依幣別分開加總，不會混在一起。</p>
+        </article>
+        <article class="feature">
+          <span class="num">06 · 回憶</span>
+          <h3>演出回憶錄</h3>
+          <p>散場後留下評分、心得、歌單和照片，慢慢累積成自己的演出紀錄。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>怎麼開始</h2>
+      <p class="sub">不用記密碼，Email 收到連結就能登入。</p>
+      <ol class="steps">
+        <li><h3>收到邀請</h3><p>只有被加進名單的 Email 能登入。</p></li>
+        <li><h3>點信裡的連結</h3><p>登入連結 15 分鐘內有效、只能用一次。</p></li>
+        <li><h3>放進第一張票</h3><p>填演出資訊、上傳票券，按「放進票夾」。</p></li>
+        <li><h3>等提醒就好</h3><p>演出前三天收到信，當天打開入場模式。</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="block" id="try">
+    <div class="wrap">
+      <h2>現在就試試</h2>
+      <p class="sub">這是示範版：不用登入，資料只存在你自己的瀏覽器裡，不會傳到任何地方。</p>
+      <div class="demo">
+        <div class="demo-tabs" role="tablist" aria-label="示範功能">
+          <button type="button" role="tab" id="tab-list" aria-selected="true" aria-controls="demoBody">票夾</button>
+          <button type="button" role="tab" id="tab-add" aria-selected="false" aria-controls="demoBody">＋ 新增</button>
+          <button type="button" role="tab" id="tab-stats" aria-selected="false" aria-controls="demoBody">統計</button>
+        </div>
+        <div class="demo-body" id="demoBody" role="tabpanel" tabindex="-1"></div>
+        <div class="demo-foot">
+          <span>示範版不會真的寄信，提醒時間僅供參考。</span>
+          <button type="button" class="btn link" id="demoReset">重設示範資料</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap entry">
+      <div class="phone" aria-hidden="true">
+        <div class="bar"><span>19:12</span><span>入場模式</span></div>
+        <div class="screen">
+          <div class="qr" id="qr"></div>
+        </div>
+        <div class="dots"><b></b><b></b></div>
+        <div class="cap">黃2A 12排 13號 · 1 / 2</div>
+      </div>
+      <div>
+        <h2>到了門口，一點就好</h2>
+        <p class="sub">排隊時不用再翻相簿找截圖。</p>
+        <ul class="checks">
+          <li>全螢幕顯示票券，QR code 清楚好掃</li>
+          <li>兩指放大，看清楚座位和小字</li>
+          <li>同一場多張票，左右滑動切換</li>
+          <li>入場模式下螢幕不會自動變暗</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <h2>用什麼做的</h2>
+      <p class="sub">全部使用免費方案就能上線。</p>
+      <dl class="tech">
+        <div><dt>FRONTEND</dt><dd>Next.js 15 · TypeScript</dd></div>
+        <div><dt>STYLE</dt><dd>Tailwind CSS · 孔版印刷設計系統</dd></div>
+        <div><dt>DATABASE</dt><dd>PostgreSQL · Drizzle ORM</dd></div>
+        <div><dt>FILES</dt><dd>Supabase Storage（私有）</dd></div>
+        <div><dt>EMAIL</dt><dd>Resend</dd></div>
+        <div><dt>HOSTING</dt><dd>Vercel · Vercel Cron</dd></div>
+      </dl>
+
+      <div class="privacy">
+        <h3>每個人的票夾各自獨立</h3>
+        <p>被邀請的人看不到彼此的票。票券檔案存在私有空間，只有本人登入後才打得開。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>票根夾 Ticket Stub</span>
+    <span class="mono">PRINTED IN ORANGE &amp; BLUE</span>
+  </div>
+</footer>
+
+<div class="overlay" id="entry" role="dialog" aria-modal="true" aria-labelledby="entryTitle" hidden>
+  <div class="ov-top">
+    <div><h3 id="entryTitle"></h3><p id="entryMeta"></p></div>
+    <button type="button" class="ov-btn" id="entryClose" aria-label="關閉入場模式">✕</button>
+  </div>
+  <div class="ov-stage" id="entryStage"></div>
+  <div class="ov-nav">
+    <button type="button" class="ov-btn" id="entryPrev" aria-label="上一張">←</button>
+    <span class="mono" id="entryCount"></span>
+    <button type="button" class="ov-btn" id="entryNext" aria-label="下一張">→</button>
+  </div>
+  <p class="ov-note" id="entryNote">示範版的 QR code 只是圖樣，不是真的票券</p>
+</div>
+
+<script>
+  // ── 試玩：資料只存在這個瀏覽器的 localStorage ──
+  (function () {
+    var KEY = "ts-demo-v1";
+    var CUR = { TWD: "NT$", JPY: "¥", KRW: "₩", USD: "US$" };
+    var WEEK = "日一二三四五六";
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+    function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+    function addDays(n) { var d = new Date(); d.setDate(d.getDate() + n); return ymd(d); }
+    function parse(s) { var p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+    function daysUntil(s) {
+      var n = new Date();
+      return Math.round((parse(s) - new Date(n.getFullYear(), n.getMonth(), n.getDate())) / 86400000);
+    }
+    function fmtDate(s) { var d = parse(s); return (d.getMonth() + 1) + "/" + d.getDate() + "（" + WEEK[d.getDay()] + "）"; }
+    function money(t) { return t.price ? (CUR[t.currency] || t.currency) + " " + Number(t.price).toLocaleString() : ""; }
+
+    function sample() {
+      return [
+        { id: "s1", title: "2026 巡迴演唱會 台北站", artist: "晨光樂團", venue: "台北小巨蛋", date: addDays(3), time: "19:30", seat: "黃2A 12排 13號", price: 3800, currency: "TWD" },
+        { id: "s2", title: "夏日音樂祭 Day 2", artist: "多組藝人", venue: "高雄流行音樂中心", date: addDays(17), time: "14:00", seat: "自由入場", price: 2400, currency: "TWD" },
+        { id: "s3", title: "Asia Tour in Tokyo", artist: "Midnight Bloom", venue: "日本武道館", date: addDays(45), time: "18:00", seat: "アリーナ A3 5列", price: 12000, currency: "JPY" },
+        { id: "s4", title: "冬季不插電專場", artist: "微光", venue: "Legacy Taipei", date: addDays(-20), time: "20:00", seat: "站區 #128", price: 1800, currency: "TWD" }
+      ];
+    }
+    function load() {
+      try { var s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch (e) {}
+      return sample();
+    }
+    function save() {
+      try { localStorage.setItem(KEY, JSON.stringify(tickets)); return true; } catch (e) { return false; }
+    }
+
+    var tickets = load();
+    var tab = "list";
+    var body = document.getElementById("demoBody");
+
+    function el(tag, attrs) {
+      var n = document.createElement(tag);
+      if (attrs) for (var k in attrs) {
+        if (k === "class") n.className = attrs[k];
+        else if (k === "text") n.textContent = attrs[k];
+        else if (k.indexOf("on") === 0) n.addEventListener(k.slice(2), attrs[k]);
+        else n.setAttribute(k, attrs[k]);
+      }
+      function add(c) {
+        if (c == null || c === false) return;
+        if (Array.isArray(c)) c.forEach(add);
+        else n.append(c.nodeType ? c : String(c));
+      }
+      for (var i = 2; i < arguments.length; i++) add(arguments[i]);
+      return n;
+    }
+
+    var toastTimer;
+    function toast(msg) {
+      var old = document.querySelector(".toast");
+      if (old) old.remove();
+      var t = el("div", { class: "toast", role: "status", text: msg });
+      document.body.append(t);
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { t.remove(); }, 2600);
+    }
+
+    function sorted() {
+      var up = tickets.filter(function (t) { return daysUntil(t.date) >= 0; })
+        .sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); });
+      var past = tickets.filter(function (t) { return daysUntil(t.date) < 0; })
+        .sort(function (a, b) { return b.date.localeCompare(a.date); });
+      return { up: up, past: past };
+    }
+
+    // ── 票夾 ──
+    function card(t) {
+      var d = daysUntil(t.date);
+      var stub;
+      if (d < 0) stub = el("div", { class: "s" }, el("span", { class: "w", text: "已結束" }));
+      else if (d === 0) stub = el("div", { class: "s" }, el("span", { class: "w", text: "就是今天" }));
+      else stub = el("div", { class: "s" }, el("span", { class: "d", text: pad(d) }), el("span", { class: "u", text: "DAYS" }));
+
+      var tag = null;
+      if (d >= 0 && d <= 3) tag = el("span", { class: "tag hot", text: "提醒信已寄出" });
+      else if (d > 3) {
+        var r = parse(t.date); r.setDate(r.getDate() - 3);
+        tag = el("span", { class: "tag", text: (r.getMonth() + 1) + "/" + r.getDate() + " 早上寄提醒信" });
+      }
+
+      var acts = el("div", { class: "acts" },
+        d >= 0 ? el("button", { type: "button", class: "btn primary", onclick: function () { openEntry(t.id); } }, "入場模式") : null,
+        el("button", { type: "button", class: "btn ghost", onclick: function () {
+          if (!confirm("確定要刪除「" + t.title + "」？")) return;
+          tickets = tickets.filter(function (x) { return x.id !== t.id; });
+          save(); render(); toast("已刪除");
+        } }, "刪除")
+      );
+
+      return el("article", { class: "dt" + (d < 0 ? " past" : "") },
+        el("div", { class: "m" },
+          t.img ? el("img", { class: "thumb", src: t.img, alt: "" }) : null,
+          el("h4", { text: t.title }),
+          el("p", { class: "a", text: t.artist }),
+          el("p", { class: "i" }, t.venue + " · " + fmtDate(t.date) + " " + t.time,
+            t.seat ? el("br") : null, t.seat || null,
+            t.price ? el("br") : null, t.price ? money(t) : null),
+          tag, acts),
+        stub);
+    }
+
+    function renderList() {
+      var s = sorted();
+      if (!tickets.length) {
+        body.append(el("div", { class: "empty" },
+          el("p", { text: "票夾是空的。" }),
+          el("button", { type: "button", class: "btn primary", onclick: function () { go("add"); } }, "新增第一張票")));
+        return;
+      }
+      body.append(el("div", { class: "dlist" }, s.up.map(card), s.past.map(card)));
+    }
+
+    // ── 新增 ──
+    function field(label, input, opts) {
+      opts = opts || {};
+      return el("div", { class: opts.full ? "full" : "" },
+        el("label", { for: input.id }, label, opts.req ? el("b", { "aria-hidden": "true", text: "*" }) : null),
+        input,
+        opts.hint ? el("p", { class: "hint", text: opts.hint }) : null,
+        el("p", { class: "err", id: input.id + "-err", hidden: "" }));
+    }
+
+    function compress(file) {
+      return new Promise(function (resolve, reject) {
+        var img = new Image();
+        var url = URL.createObjectURL(file);
+        img.onload = function () {
+          var max = 900, w = img.width, h = img.height, k = Math.min(1, max / Math.max(w, h));
+          var c = document.createElement("canvas");
+          c.width = Math.round(w * k); c.height = Math.round(h * k);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          resolve(c.toDataURL("image/jpeg", 0.8));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(); };
+        img.src = url;
+      });
+    }
+
+    function renderAdd() {
+      var f = {
+        title: el("input", { id: "f-title", placeholder: "例：2026 巡迴演唱會 台北站", autocomplete: "off" }),
+        artist: el("input", { id: "f-artist", autocomplete: "off" }),
+        venue: el("input", { id: "f-venue", autocomplete: "off" }),
+        date: el("input", { id: "f-date", type: "date", value: addDays(7) }),
+        time: el("input", { id: "f-time", type: "time", value: "19:30" }),
+        seat: el("input", { id: "f-seat", placeholder: "黃2A 12排 13號", autocomplete: "off" }),
+        price: el("input", { id: "f-price", inputmode: "decimal", placeholder: "3800" }),
+        currency: el("select", { id: "f-cur" },
+          el("option", { value: "TWD" }, "TWD"), el("option", { value: "JPY" }, "JPY"),
+          el("option", { value: "KRW" }, "KRW"), el("option", { value: "USD" }, "USD")),
+        img: el("input", { id: "f-img", type: "file", accept: "image/*" })
+      };
+      var submit = el("button", { type: "submit", class: "btn primary" }, "放進票夾");
+      var form = el("form", { class: "dform", novalidate: "" },
+        field("演出名稱", f.title, { req: true, full: true }),
+        field("表演者", f.artist, { req: true }),
+        field("場館", f.venue, { req: true }),
+        field("日期", f.date, { req: true }),
+        field("開演", f.time, { req: true }),
+        field("座位", f.seat, {}),
+        el("div", {},
+          el("label", { for: "f-price" }, "票價"),
+          el("div", { class: "row" }, f.price, f.currency),
+          el("p", { class: "err", id: "f-price-err", hidden: "" })),
+        field("票券截圖", f.img, { full: true, hint: "選一張票券圖片試試看，入場模式會顯示它。（示範版不支援 PDF）" }),
+        el("div", { class: "full" }, submit));
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        var bad = null;
+        function check(input, ok, msg) {
+          var err = document.getElementById(input.id + "-err");
+          if (ok) { err.hidden = true; input.removeAttribute("aria-invalid"); input.removeAttribute("aria-describedby"); return; }
+          err.textContent = msg; err.hidden = false;
+          input.setAttribute("aria-invalid", "true"); input.setAttribute("aria-describedby", err.id);
+          bad = bad || input;
+        }
+        var price = f.price.value.trim().replace(/,/g, "");
+        check(f.title, f.title.value.trim(), "請填演出名稱");
+        check(f.artist, f.artist.value.trim(), "請填表演者");
+        check(f.venue, f.venue.value.trim(), "請填場館");
+        check(f.date, /^\d{4}-\d{2}-\d{2}$/.test(f.date.value), "請選日期");
+        check(f.time, /^\d{2}:\d{2}$/.test(f.time.value), "請選開演時間");
+        check(f.price, !price || (!isNaN(price) && Number(price) >= 0), "票價請填數字");
+        if (bad) { bad.focus(); return; }
+
+        submit.disabled = true; submit.textContent = "儲存中…";
+        var file = f.img.files && f.img.files[0];
+        (file ? compress(file).catch(function () { return null; }) : Promise.resolve(null)).then(function (img) {
+          var t = {
+            id: "u" + Date.now(), title: f.title.value.trim(), artist: f.artist.value.trim(),
+            venue: f.venue.value.trim(), date: f.date.value, time: f.time.value,
+            seat: f.seat.value.trim(), price: price ? Number(price) : 0, currency: f.currency.value
+          };
+          if (img) t.img = img;
+          tickets.push(t);
+          var msg = "已放進票夾";
+          if (!save()) {
+            delete t.img;
+            msg = save() ? "圖片太大存不下，先放進沒有圖片的版本" : "瀏覽器不允許存資料，重新整理後會消失";
+          }
+          go("list");
+          toast(msg);
+        });
+      });
+
+      body.append(form);
+    }
+
+    // ── 統計 ──
+    function renderStats() {
+      var s = sorted();
+      var totals = {};
+      tickets.forEach(function (t) { if (t.price) totals[t.currency] = (totals[t.currency] || 0) + t.price; });
+      body.append(el("div", { class: "tiles" },
+        el("div", { class: "tile" }, el("b", { text: tickets.length }), el("span", { text: "場演出" })),
+        el("div", { class: "tile" }, el("b", { text: s.up.length }), el("span", { text: "場還沒看" })),
+        el("div", { class: "tile" }, el("b", { text: s.past.length }), el("span", { text: "場看過了" }))));
+
+      var keys = Object.keys(totals);
+      if (!keys.length) { body.append(el("p", { class: "sub", text: "還沒有填票價的演出。" })); return; }
+      body.append(el("h3", { style: "margin:0 0 12px;font-size:18px;font-weight:900", text: "花費（依幣別分開加總）" }));
+      body.append(el("ul", { class: "cur" }, keys.map(function (k) {
+        var n = tickets.filter(function (t) { return t.currency === k && t.price; }).length;
+        return el("li", {},
+          el("span", { class: "mono", text: k }),
+          el("div", { class: "bar", "aria-hidden": "true" }, el("i", { style: "width:" + Math.max(6, Math.round(n / tickets.length * 100)) + "%" })),
+          el("span", { class: "v", text: (CUR[k] || k) + " " + totals[k].toLocaleString() + "（" + n + " 場）" }));
+      })));
+    }
+
+    // ── 分頁 ──
+    var tabs = { list: "tab-list", add: "tab-add", stats: "tab-stats" };
+    function render() {
+      body.textContent = "";
+      Object.keys(tabs).forEach(function (k) {
+        document.getElementById(tabs[k]).setAttribute("aria-selected", String(k === tab));
+      });
+      body.setAttribute("aria-labelledby", tabs[tab]);
+      if (tab === "list") renderList();
+      else if (tab === "add") renderAdd();
+      else renderStats();
+    }
+    function go(k) { tab = k; render(); }
+    Object.keys(tabs).forEach(function (k) {
+      document.getElementById(tabs[k]).addEventListener("click", function () { go(k); });
+    });
+    document.getElementById("demoReset").addEventListener("click", function () {
+      if (!confirm("清除你加的票，恢復成範例資料？")) return;
+      tickets = sample(); save(); go("list"); toast("已恢復範例資料");
+    });
+
+    // ── 入場模式 ──
+    var ov = document.getElementById("entry");
+    var list = [], idx = 0, opener = null, lock = null;
+
+    function hash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+    function qrCanvas(seed) {
+      var N = 25, c = document.createElement("canvas"), x = c.getContext("2d");
+      c.width = c.height = N * 8;
+      var r = hash(seed);
+      function rnd() { r ^= r << 13; r ^= r >>> 17; r ^= r << 5; return (r >>> 0) / 4294967296; }
+      x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.fillStyle = "#111";
+      function finder(cx, cy) {
+        x.fillRect(cx * 8, cy * 8, 56, 56);
+        x.fillStyle = "#fff"; x.fillRect(cx * 8 + 8, cy * 8 + 8, 40, 40);
+        x.fillStyle = "#111"; x.fillRect(cx * 8 + 16, cy * 8 + 16, 24, 24);
+      }
+      for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) {
+        var inF = (i < 8 && j < 8) || (i > N - 9 && j < 8) || (i < 8 && j > N - 9);
+        if (!inF && rnd() > 0.5) x.fillRect(i * 8, j * 8, 8, 8);
+      }
+      finder(0, 0); finder(N - 7, 0); finder(0, N - 7);
+      return c;
+    }
+
+    function show() {
+      var t = list[idx];
+      document.getElementById("entryTitle").textContent = t.title;
+      document.getElementById("entryMeta").textContent = t.venue + " · " + fmtDate(t.date) + " " + t.time;
+      var stage = document.getElementById("entryStage");
+      stage.textContent = "";
+      if (t.img) stage.append(el("img", { src: t.img, alt: "票券：" + (t.seat || t.title) }));
+      else stage.append(el("div", { class: "ov-qr", role: "img", "aria-label": "示意 QR code" }, qrCanvas(t.id), el("p", { text: t.seat || "票券" })));
+      document.getElementById("entryNote").hidden = !!t.img;
+      document.getElementById("entryCount").textContent = (idx + 1) + " / " + list.length;
+      document.getElementById("entryPrev").disabled = idx === 0;
+      document.getElementById("entryNext").disabled = idx === list.length - 1;
+    }
+    function openEntry(id) {
+      list = sorted().up;
+      idx = Math.max(0, list.findIndex(function (t) { return t.id === id; }));
+      opener = document.activeElement;
+      ov.hidden = false;
+      document.body.style.overflow = "hidden";
+      show();
+      document.getElementById("entryClose").focus();
+      // 讓螢幕不自動變暗（支援的瀏覽器才有效）
+      try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (l) { lock = l; }).catch(function () {}); } catch (e) {}
+    }
+    function closeEntry() {
+      ov.hidden = true;
+      document.body.style.overflow = "";
+      if (lock) { lock.release().catch(function () {}); lock = null; }
+      if (opener && opener.focus) opener.focus();
+    }
+    document.getElementById("entryClose").addEventListener("click", closeEntry);
+    document.getElementById("entryPrev").addEventListener("click", function () { if (idx > 0) { idx--; show(); } });
+    document.getElementById("entryNext").addEventListener("click", function () { if (idx < list.length - 1) { idx++; show(); } });
+    document.addEventListener("keydown", function (e) {
+      if (ov.hidden) return;
+      if (e.key === "Escape") closeEntry();
+      else if (e.key === "ArrowLeft" && idx > 0) { idx--; show(); }
+      else if (e.key === "ArrowRight" && idx < list.length - 1) { idx++; show(); }
+      else if (e.key === "Tab") {
+        var f = Array.prototype.filter.call(ov.querySelectorAll("button"), function (b) { return !b.disabled; });
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+    // 手機左右滑動切換
+    var sx = null;
+    ov.addEventListener("touchstart", function (e) { sx = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+    ov.addEventListener("touchend", function (e) {
+      if (sx == null) return;
+      var dx = e.changedTouches[0].clientX - sx; sx = null;
+      if (dx < -50 && idx < list.length - 1) { idx++; show(); }
+      else if (dx > 50 && idx > 0) { idx--; show(); }
+    });
+
+    render();
+  })();
+
+  // 示意用 QR 圖樣（非真實票券）
+  (function () {
+    var qr = document.getElementById("qr");
+    var pattern = [
+      "111101111","100101001","101101101","111100111","000011010",
+      "111010101","100101111","101110001","111101011"
+    ];
+    pattern.join("").split("").forEach(function (c) {
+      var i = document.createElement("i");
+      if (c === "0") i.className = "o";
+      qr.appendChild(i);
+    });
+  })();
+
+  // 深淺色切換
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById("themeBtn");
+    var saved = null;
+    try { saved = localStorage.getItem("ts-theme"); } catch (e) {}
+    if (saved) root.setAttribute("data-theme", saved);
+    function isDark() {
+      var t = root.getAttribute("data-theme");
+      if (t) return t === "dark";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches;
+    }
+    function label() { btn.textContent = isDark() ? "淺色" : "深色"; }
+    label();
+    btn.addEventListener("click", function () {
+      var next = isDark() ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("ts-theme", next); } catch (e) {}
+      label();
+    });
+  })();
+</script>
+</body>
+</html>
